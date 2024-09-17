@@ -39,7 +39,7 @@ public class Consume {
             consumer.subscribe(topics);
 
             while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
 
                 System.out.println("Polled " + records.count() + " records");
 
