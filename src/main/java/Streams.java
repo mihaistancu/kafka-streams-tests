@@ -12,6 +12,7 @@ public class Streams {
         var builder = new StreamsBuilder();
         builder
                 .stream("input", Consumed.with(Serdes.String(), Serdes.String()))
+                .peek((k, v) -> System.out.println(k + " : " + v))
                 .to("output", Produced.with(Serdes.String(), Serdes.String()));
 
         var topology = builder.build();

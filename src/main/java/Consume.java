@@ -40,6 +40,9 @@ public class Consume {
 
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+
+                System.out.println("Polled " + records.count() + " records");
+
                 for (ConsumerRecord<String, String> record : records) {
                     System.out.println(record.key() + " : " + record.value());
                 }
