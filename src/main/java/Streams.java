@@ -3,7 +3,10 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.state.TimestampedKeyValueStore;
 import processors.SchedulerProcessor;
+import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
 
 import java.time.Duration;
 import java.util.*;
@@ -11,11 +14,19 @@ import java.util.concurrent.CountDownLatch;
 
 public class Streams {
     public static void main(String[] args) throws Exception {
+
+        StoreBuilder<TimestampedKeyValueStore<String, String>> storeBuilder = Stores.timestampedKeyValueStoreBuilder(
+                Stores.persistentTimestampedKeyValueStore("scheduler-store"),
+                Serdes.String(),
+                Serdes.String());
+
         var builder = new StreamsBuilder();
         builder
+                .addStateStore(storeBuilder)
                 .stream("input", Consumed.with(Serdes.String(), Serdes.String()))
-                .peek((k, v) -> System.out.println(k + " : " + v))
-                .process(SchedulerProcessor::new)
+                .peek((k, v) -> System.out.println("before " + k + " : " + v))
+                .process(SchedulerProcessor::new, "scheduler-store")
+                .peek((k, v) -> System.out.println("after " + k + " : " + v))
                 .to("output", Produced.with(Serdes.String(), Serdes.String()));
 
         var topology = builder.build();
