@@ -1,7 +1,9 @@
+import common.Config;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
+import processors.SchedulerProcessor;
 
 import java.time.Duration;
 import java.util.*;
@@ -13,13 +15,14 @@ public class Streams {
         builder
                 .stream("input", Consumed.with(Serdes.String(), Serdes.String()))
                 .peek((k, v) -> System.out.println(k + " : " + v))
+                .process(SchedulerProcessor::new)
                 .to("output", Produced.with(Serdes.String(), Serdes.String()));
 
         var topology = builder.build();
 
         Properties properties = new Properties();
-        properties.put("bootstrap.servers", "localhost:9094");
-        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "punctuator-test");
+        properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Config.SERVERS);
+        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, Config.getAppId());
         properties.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE_V2);
         properties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 1);
 

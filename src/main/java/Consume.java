@@ -1,11 +1,11 @@
 import common.Config;
 import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
-import java.util.UUID;
 
 import static java.lang.System.getProperty;
 import static java.util.Arrays.asList;
@@ -15,7 +15,7 @@ public class Consume {
         var props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Config.SERVERS);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.EARLIEST.toString());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, Config.getAppId());
         props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, List.of(CooperativeStickyAssignor.class));
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -47,6 +47,9 @@ public class Consume {
                     System.out.println(record.key() + " : " + record.value());
                 }
             }
+        }
+        catch (WakeupException e) {
+            System.out.println("Stopped");
         }
     }
 }
