@@ -22,8 +22,8 @@ public class Produce {
         int count = Integer.parseInt(System.getProperty("count", "10"));
 
         try (KafkaProducer<String,String> producer = new KafkaProducer<>(props)) {
-            for (int i = start; i < count; i++) {
-                String value = String.valueOf(i);
+            for (int i = 0; i < count; i++) {
+                String value = topic + (i + start);
                 var message = new ProducerRecord<>(topic, key.orElse(value), value);
                 producer.send(message).get();
             }

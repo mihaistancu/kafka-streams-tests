@@ -12,10 +12,10 @@ public class CreateTopics {
 
             final List<NewTopic> topics = new ArrayList<>();
 
-            int partitions = 1;
+            String topic = System.getProperty("topic", "input");
+            int partitions = Integer.parseInt(System.getProperty("partitions", "1"));
             short replication = 1;
-            topics.add(new NewTopic("input", partitions, replication));
-            topics.add(new NewTopic("output", partitions, replication));
+            topics.add(new NewTopic(topic, partitions, replication));
 
             client.createTopics(topics);
         }
