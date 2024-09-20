@@ -7,6 +7,7 @@ import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.*;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import static org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME;
 
@@ -15,32 +16,37 @@ public class SchedulerProcessor implements Processor<String, String, String, Str
     private TimestampedKeyValueStore<String, String> store;
     private ProcessorContext<String, String> context;
 
+    private long start = 0;
+
     @Override
     public void init(ProcessorContext<String, String> processorContext) {
         this.context = processorContext;
+        this.start = Instant.now().toEpochMilli();
+
         this.store = processorContext.getStateStore("scheduler-store");
-        this.context.schedule(Duration.ofSeconds(3), WALL_CLOCK_TIME, this::punctuate);
+        this.context.schedule(Duration.ofSeconds(1), WALL_CLOCK_TIME, this::punctuate);
     }
 
     public void punctuate(long timestamp) {
-        System.out.println(timestamp);
+        System.out.println(timestamp + " " + Instant.now());
+
+        if (timestamp < start + 20000) {
+            return;
+        }
 
         try (KeyValueIterator<String, ValueAndTimestamp<String>> iterator = store.all()) {
             while (iterator.hasNext()) {
                 KeyValue<String, ValueAndTimestamp<String>> keyValue = iterator.next();
-                long duration = timestamp - keyValue.value.timestamp();
-                if (duration > 5000) {
-                    var record = new Record<>(keyValue.key, keyValue.value.value(), keyValue.value.timestamp());
-                    context.forward(record);
-                    store.delete(keyValue.key);
-                }
+                var record = new Record<>(keyValue.key, keyValue.value.value(), keyValue.value.timestamp());
+                context.forward(record);
+                store.delete(keyValue.key);
             }
         }
     }
 
     @Override
     public void process(Record<String, String> record) {
-        store.put(record.key(), ValueAndTimestamp.make(record.value(), record.timestamp()));
+        store.put(record.key(), ValueAndTimestamp.make(record.value(), context.currentSystemTimeMs()));
     }
 
     @Override

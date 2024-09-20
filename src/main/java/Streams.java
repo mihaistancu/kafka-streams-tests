@@ -4,7 +4,6 @@ import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.TimestampedKeyValueStore;
-import processors.DelayProcessor;
 import processors.SchedulerProcessor;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
@@ -12,14 +11,10 @@ import org.apache.kafka.streams.state.Stores;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Streams {
     public static void main(String[] args) throws Exception {
-
-        StoreBuilder<TimestampedKeyValueStore<String, String>> delayStoreBuilder = Stores.timestampedKeyValueStoreBuilder(
-                Stores.persistentTimestampedKeyValueStore("delay-store"),
-                Serdes.String(),
-                Serdes.String());
 
         StoreBuilder<TimestampedKeyValueStore<String, String>> schedulerStoreBuilder = Stores.timestampedKeyValueStoreBuilder(
                 Stores.persistentTimestampedKeyValueStore("scheduler-store"),
@@ -28,22 +23,26 @@ public class Streams {
 
         var builder = new StreamsBuilder();
 
-
-        builder.addStateStore(delayStoreBuilder);
         builder.addStateStore(schedulerStoreBuilder);
 
-        builder
-                .stream("scan1", Consumed.with(Serdes.String(), Serdes.String()))
-                .peek((k, v) -> System.out.println("s1 before " + k + " : " + v))
-                .process(DelayProcessor::new, "delay-store")
-                .peek((k, v) -> System.out.println("s1 after " + k + " : " + v))
-                .to("scan2", Produced.with(Serdes.String(), Serdes.String()));
+        AtomicLong before = new AtomicLong();
+        AtomicLong after = new AtomicLong();
 
         builder
                 .stream("input", Consumed.with(Serdes.String(), Serdes.String()))
-                .peek((k, v) -> System.out.println("s2 before " + k + " : " + v))
-                .process(SchedulerProcessor::new, "scheduler-store")
-                .peek((k, v) -> System.out.println("s2 after " + k + " : " + v))
+                .peek((k, v) -> {
+                    before.getAndIncrement();
+                    if (before.get() % 100000 == 0) {
+                        System.out.println("before " + before.get());
+                    }
+                })
+                //.process(SchedulerProcessor::new, "scheduler-store")
+                .peek((k, v) -> {
+                    after.getAndIncrement();
+                    if (after.get() % 100000 == 0) {
+                        System.out.println("after " + after.get());
+                    }
+                })
                 .to("output", Produced.with(Serdes.String(), Serdes.String()));
 
         var topology = builder.build();

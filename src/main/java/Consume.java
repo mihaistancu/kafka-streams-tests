@@ -38,13 +38,16 @@ public class Consume {
 
             consumer.subscribe(topics);
 
+            long consumed = 0;
+            long threshold = 0;
+
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
 
-                System.out.println("Polled " + records.count() + " records");
-
-                for (ConsumerRecord<String, String> record : records) {
-                    System.out.println(record.key() + " : " + record.value());
+                consumed += records.count();
+                if (consumed > threshold) {
+                    System.out.println("Consumed " + consumed);
+                    threshold += 100000;
                 }
             }
         }
