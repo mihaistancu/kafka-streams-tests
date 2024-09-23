@@ -41,7 +41,7 @@ public class SchedulerProcessor implements Processor<String, String, String, Str
                 KeyValue<String, String> keyValue = iterator.next();
                 var record = new Record<>(keyValue.key, keyValue.value, timestamp);
                 context.forward(record);
-                //store.delete(keyValue.key);
+                store.delete(keyValue.key);
             }
 
             System.out.println("punctuate processed: " + count);

@@ -1,4 +1,5 @@
 import common.Config;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.Consumed;
@@ -8,6 +9,7 @@ import org.apache.kafka.streams.state.TimestampedKeyValueStore;
 import processors.SchedulerProcessor;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
+import processors.TestProcessor;
 
 import java.time.Duration;
 import java.util.*;
@@ -37,6 +39,7 @@ public class Streams {
                         System.out.println("before " + before.get());
                     }
                 })
+                //.process(TestProcessor::new, "scheduler-store")
                 .process(SchedulerProcessor::new, "scheduler-store")
                 .peek((k, v) -> {
                     after.getAndIncrement();
@@ -53,6 +56,7 @@ public class Streams {
         properties.put(StreamsConfig.APPLICATION_ID_CONFIG, Config.getAppId());
         properties.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE_V2);
         properties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 1);
+        properties.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, 900000);
 
         var latch = new CountDownLatch(1);
 
