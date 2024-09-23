@@ -3,6 +3,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.TimestampedKeyValueStore;
 import processors.SchedulerProcessor;
 import org.apache.kafka.streams.state.StoreBuilder;
@@ -16,8 +17,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Streams {
     public static void main(String[] args) throws Exception {
 
-        StoreBuilder<TimestampedKeyValueStore<String, String>> schedulerStoreBuilder = Stores.timestampedKeyValueStoreBuilder(
-                Stores.persistentTimestampedKeyValueStore("scheduler-store"),
+        StoreBuilder<KeyValueStore<String, String>> schedulerStoreBuilder = Stores.keyValueStoreBuilder(
+                Stores.persistentKeyValueStore("scheduler-store"),
                 Serdes.String(),
                 Serdes.String());
 
@@ -36,7 +37,7 @@ public class Streams {
                         System.out.println("before " + before.get());
                     }
                 })
-                //.process(SchedulerProcessor::new, "scheduler-store")
+                .process(SchedulerProcessor::new, "scheduler-store")
                 .peek((k, v) -> {
                     after.getAndIncrement();
                     if (after.get() % 100000 == 0) {

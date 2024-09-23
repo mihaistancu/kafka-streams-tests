@@ -25,7 +25,7 @@ public class Produce {
             for (int i = 0; i < count; i++) {
                 String value = topic + (i + start);
                 var message = new ProducerRecord<>(topic, key.orElse(value), value);
-                producer.send(message).get();
+                producer.send(message);
             }
         }
     }

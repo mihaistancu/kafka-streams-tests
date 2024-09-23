@@ -13,7 +13,7 @@ import static org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME
 
 public class SchedulerProcessor implements Processor<String, String, String, String> {
 
-    private TimestampedKeyValueStore<String, String> store;
+    private KeyValueStore<String, String> store;
     private ProcessorContext<String, String> context;
 
     private long start = 0;
@@ -34,19 +34,23 @@ public class SchedulerProcessor implements Processor<String, String, String, Str
             return;
         }
 
-        try (KeyValueIterator<String, ValueAndTimestamp<String>> iterator = store.all()) {
+        long count = 0;
+        try (KeyValueIterator<String, String> iterator = store.all()) {
             while (iterator.hasNext()) {
-                KeyValue<String, ValueAndTimestamp<String>> keyValue = iterator.next();
-                var record = new Record<>(keyValue.key, keyValue.value.value(), keyValue.value.timestamp());
+                count++;
+                KeyValue<String, String> keyValue = iterator.next();
+                var record = new Record<>(keyValue.key, keyValue.value, timestamp);
                 context.forward(record);
-                store.delete(keyValue.key);
+                //store.delete(keyValue.key);
             }
+
+            System.out.println("punctuate processed: " + count);
         }
     }
 
     @Override
     public void process(Record<String, String> record) {
-        store.put(record.key(), ValueAndTimestamp.make(record.value(), context.currentSystemTimeMs()));
+        store.put(record.key(), record.value());
     }
 
     @Override
